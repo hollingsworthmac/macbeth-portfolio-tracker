@@ -3,7 +3,7 @@
 import React from 'react';
 import { useAppStore } from '../store/appStore';
 
-export default function AccountsPage(): JSX.Element {
+export default function AccountsPage() {
   const accounts = useAppStore((s) => s.accounts);
 
   return (

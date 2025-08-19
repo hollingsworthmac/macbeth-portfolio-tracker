@@ -1,40 +1,8 @@
+// app/store/appStore.ts
 import { create } from 'zustand'
+import type { Account, Transaction } from '../types'
 
-/** Types (initial pass; we’ll refine in DS2) */
-export type AccountType = 'TFSA' | 'RRSP' | 'RRIF/LIF' | 'MARGIN' | 'CRYPTO' | 'RESP' | 'FHSA'
-export type Currency = 'CAD' | 'USD'
-export type AssetCategory = 'ETF' | 'STK' | 'CRYPTO' | 'OPT' | 'BOND' | 'MUT'
-
-export interface Account {
-  id: string
-  alias: string
-  holder: string
-  broker: string
-  accountNumber: string
-  baseCurrency: Currency
-  accountType: AccountType
-  registered: boolean
-}
-
-export interface Transaction {
-  id: string
-  accountId: string
-  date: string // ISO YYYY-MM-DD
-  action:
-    | 'BUY' | 'SELL' | 'TRANSFER' | 'DIVIDEND' | 'INTEREST'
-    | 'REINVEST_DIVIDEND' | 'WITHHOLDING_TAX' | 'FEE'
-    | 'DEPOSIT' | 'WITHDRAWAL' | 'STOCK_SPLIT' | 'ROC'
-    | 'CORPORATE_ACTION'
-  symbol: string
-  assetCategory: AssetCategory
-  currency: Currency
-  quantity: number // negative allowed for shorts / written options
-  price: number
-  notes?: string
-  strategyId?: string
-}
-
-/** Store shape */
+// Store shape
 type StoreState = {
   accounts: Account[]
   transactions: Transaction[]
@@ -42,7 +10,7 @@ type StoreState = {
   addTransaction: (t: Transaction) => void
 }
 
-/** Seed data (mock) */
+// Seed data
 const seedAccounts: Account[] = [
   {
     id: 'acc-001',
@@ -93,7 +61,7 @@ const seedTransactions: Transaction[] = [
   },
 ]
 
-/** Zustand store */
+// Zustand store
 export const useAppStore = create<StoreState>((set) => ({
   accounts: seedAccounts,
   transactions: seedTransactions,

@@ -1,8 +1,10 @@
-'use client'
-import { useAppStore } from '../store/appStore'
+'use client';
+
+import React from 'react';
+import { useAppStore } from '../store/appStore';
 
 export default function TransactionsPage() {
-  const txs = useAppStore((s) => s.transactions)
+  const txs = useAppStore((s) => s.transactions);
 
   return (
     <main>
@@ -27,5 +29,5 @@ export default function TransactionsPage() {
         </tbody>
       </table>
     </main>
-  )
+  );
 }

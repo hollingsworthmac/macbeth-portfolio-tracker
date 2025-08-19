@@ -1,10 +1,11 @@
-'use client'
-import Link from 'next/link'
-import { useAppStore } from './store/appStore'
+'use client';
+
+import Link from 'next/link';
+import { useAppStore } from './store/appStore';
 
 export default function HomePage() {
-  const accounts = useAppStore((s) => s.accounts)
-  const transactions = useAppStore((s) => s.transactions)
+  const accounts = useAppStore((s) => s.accounts);
+  const transactions = useAppStore((s) => s.transactions);
 
   return (
     <main>
@@ -17,5 +18,5 @@ export default function HomePage() {
         <Link href="/transactions">Transactions</Link>
       </nav>
     </main>
-  )
+  );
 }

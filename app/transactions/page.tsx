@@ -9,6 +9,9 @@ export default function TransactionsPage() {
   return (
     <main>
       <h2>Transactions</h2>
+      <p style={{ margin: '12px 0' }}>
+  <a href="/transactions/new">+ Add Transaction</a>
+</p>
       <table>
         <thead>
           <tr>

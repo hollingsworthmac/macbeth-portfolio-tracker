@@ -17,6 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/">Dashboard</Link>
             <Link href="/accounts">Accounts</Link>
             <Link href="/transactions">Transactions</Link>
+            <Link href="/holdings">Holdings</Link>
           </nav>
         </header>
         <main style={{ padding: 24 }}>{children}</main>

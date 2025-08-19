@@ -9,6 +9,14 @@ export default function AccountsPage() {
   return (
     <main>
       <h2>Accounts</h2>
+
+      {/* Add Account link */}
+      <p style={{ margin: '12px 0' }}>
+        <a href="/accounts/new">+ Add Account</a>
+      </p>
+<p style={{ margin: '12px 0' }}>
+  <a href="/transactions/new">+ Add Transaction</a>
+</p>
       <ul>
         {accounts.map((a) => (
           <li key={a.id}>

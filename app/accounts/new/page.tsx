@@ -1,7 +1,7 @@
-// app/accounts/new/page.tsx
+// app/accounts/new/page.tsx (replace the form + handlers)
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { AccountsService } from '../../services/accounts'
 import type { AccountType, Currency } from '../../types'
@@ -19,16 +19,19 @@ export default function NewAccountPage() {
   const [registered, setRegistered] = useState(true)
   const [msg, setMsg] = useState<string>('')
 
-  const onSubmit = (e: React.FormEvent) => {
+  const errors = {
+    alias: alias.trim() ? '' : 'Alias is required',
+    holder: holder.trim() ? '' : 'Holder is required',
+  }
+  const hasErrors = useMemo(() => Object.values(errors).some(Boolean), [errors])
+
+  function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!alias.trim() || !holder.trim()) {
-      setMsg('Alias and Holder are required')
-      return
-    }
+    if (hasErrors) return
     AccountsService.create({
       alias, holder, broker, accountNumber, baseCurrency, accountType, registered
     })
-    setMsg('Account created')
+    setMsg('✅ Account created')
     setAlias(''); setHolder(''); setBroker(''); setAccountNumber('')
   }
 
@@ -36,8 +39,14 @@ export default function NewAccountPage() {
     <div>
       <h2>New Account</h2>
       <form onSubmit={onSubmit} style={{ display:'grid', gap: 8, maxWidth: 520 }}>
-        <input placeholder="Alias" value={alias} onChange={e=>setAlias(e.target.value)} />
-        <input placeholder="Holder" value={holder} onChange={e=>setHolder(e.target.value)} />
+        <div>
+          <input placeholder="Alias" value={alias} onChange={e=>setAlias(e.target.value)} />
+          {errors.alias && <div style={{ color:'crimson', fontSize:12 }}>{errors.alias}</div>}
+        </div>
+        <div>
+          <input placeholder="Holder" value={holder} onChange={e=>setHolder(e.target.value)} />
+          {errors.holder && <div style={{ color:'crimson', fontSize:12 }}>{errors.holder}</div>}
+        </div>
         <input placeholder="Broker" value={broker} onChange={e=>setBroker(e.target.value)} />
         <input placeholder="Account Number" value={accountNumber} onChange={e=>setAccountNumber(e.target.value)} />
 
@@ -58,7 +67,9 @@ export default function NewAccountPage() {
           {' '}Registered
         </label>
 
-        <button type="submit">Create</button>
+        <button type="submit" disabled={hasErrors} style={{ opacity: hasErrors ? 0.6 : 1 }}>
+          Create
+        </button>
       </form>
 
       {msg && <p>{msg}</p>}

@@ -1,24 +1,7 @@
-// app/types.ts
-export type AccountType = 'TFSA' | 'RRSP' | 'RRIF/LIF' | 'MARGIN' | 'CRYPTO' | 'RESP' | 'FHSA'
-export type Currency = 'CAD' | 'USD'
-export type AssetCategory = 'ETF' | 'STK' | 'CRYPTO' | 'OPT' | 'BOND' | 'MUT'
-
 export type TxAction =
-  | 'BUY' | 'SELL' | 'TRANSFER' | 'DIVIDEND' | 'INTEREST'
-  | 'REINVEST_DIVIDEND' | 'WITHHOLDING_TAX' | 'FEE'
-  | 'DEPOSIT' | 'WITHDRAWAL' | 'STOCK_SPLIT' | 'ROC'
-  | 'CORPORATE_ACTION'
-
-export interface Account {
-  id: string
-  alias: string
-  holder: string
-  broker: string
-  accountNumber: string
-  baseCurrency: Currency
-  accountType: AccountType
-  registered: boolean
-}
+  | 'BUY' | 'SELL' | 'DEPOSIT' | 'WITHDRAWAL'
+  | 'DIVIDEND' | 'INTEREST' | 'REINVEST_DIVIDEND'
+  | 'ROC' | 'STOCK_SPLIT' | 'WITHHOLDING_TAX'
 
 export interface Transaction {
   id: string
@@ -26,10 +9,13 @@ export interface Transaction {
   date: string // ISO YYYY-MM-DD
   action: TxAction
   symbol: string
-  assetCategory: AssetCategory
-  currency: Currency
-  quantity: number // negative allowed for shorts / written options
-  price: number
+  assetCategory: 'ETF' | 'STK' | 'CRYPTO' | 'OPT' | 'BOND' | 'MUT'
+  currency: 'CAD' | 'USD'
+  quantity: number         // negative only for SELL (or future shorts)
+  price: number            // in tx currency
+  fees?: number            // in tx currency (default 0)
+  withholdingTax?: number  // in tx currency (default 0; use for US divs)
+  fxRateOverride?: number  // CAD per 1 unit of tx currency (optional)
   notes?: string
   strategyId?: string
 }

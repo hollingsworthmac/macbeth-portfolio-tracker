@@ -1,21 +1,35 @@
 // app/services/transactions.ts
+'use client'
+
+import { STORAGE_KEYS, readJSON, writeJSON, migrateTxIfNeeded } from './storage'
 import type { Transaction } from '../types'
-import { useAppStore } from '../store/appStore'
 
-const makeId = (p: string) => `${p}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`
+/** Read all transactions (after migrating any legacy keys) */
+export function getTransactions(): Transaction[] {
+  // try canonical
+  let list = readJSON<Transaction[]>(STORAGE_KEYS.tx, [])
+  if (!list.length) {
+    // migrate any legacy keys into the canonical key
+    list = migrateTxIfNeeded<Transaction>()
+  }
+  return list
+}
 
-export const TransactionsService = {
-  list(): Transaction[] {
-    return useAppStore.getState().transactions
-  },
+export function saveTransactions(list: Transaction[]) {
+  writeJSON(STORAGE_KEYS.tx, list)
+}
 
-  byAccount(accountId: string): Transaction[] {
-    return useAppStore.getState().transactions.filter(tx => tx.accountId === accountId)
-  },
+export function addTransaction(t: Transaction) {
+  const list = getTransactions()
+  list.push(t)
+  saveTransactions(list)
+}
 
-  create(t: Omit<Transaction, 'id'>): Transaction {
-    const tx: Transaction = { id: makeId('tx'), ...t }
-    useAppStore.getState().addTransaction(tx)
-    return tx
-  },
+export function deleteTransaction(id: string) {
+  const list = getTransactions().filter(x => x.id !== id)
+  saveTransactions(list)
+}
+
+export function clearAllTransactions() {
+  saveTransactions([])
 }

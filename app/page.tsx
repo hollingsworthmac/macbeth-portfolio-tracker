@@ -1,22 +1,35 @@
-'use client';
+'use client'
+import Link from 'next/link'
+import { getTransactions } from './services/transactions'
+import { useEffect, useState } from 'react'
 
-import Link from 'next/link';
-import { useAppStore } from './store/appStore';
+export default function Dashboard() {
+  const [txCount, setTxCount] = useState(0)
+  const [accountCount, setAccountCount] = useState(0)
 
-export default function HomePage() {
-  const accounts = useAppStore((s) => s.accounts);
-  const transactions = useAppStore((s) => s.transactions);
+  useEffect(() => {
+    // Transactions
+    const txs = getTransactions()
+    setTxCount(txs.length)
+
+    // If you track accounts in localStorage similarly:
+    try {
+      const raw = localStorage.getItem('mbpt:accounts') // or use a service if you have one
+      setAccountCount(raw ? JSON.parse(raw).length : 0)
+    } catch {
+      setAccountCount(0)
+    }
+  }, [])
 
   return (
     <main>
-      <h1>MacBeth Portfolio Tracker</h1>
-      <p>Accounts: {accounts.length}</p>
-      <p>Transactions: {transactions.length}</p>
-
-      <nav style={{ marginTop: 16 }}>
-        <Link href="/accounts">Accounts</Link>{' | '}
+      <h2>MacBeth Portfolio Tracker</h2>
+      <p>Accounts: {accountCount}</p>
+      <p>Transactions: {txCount}</p>
+      <p>
+        <Link href="/accounts">Accounts</Link> |{' '}
         <Link href="/transactions">Transactions</Link>
-      </nav>
+      </p>
     </main>
-  );
+  )
 }

@@ -1,16 +1,18 @@
 // app/store/appStore.ts
 import { create } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import type { Account, Transaction } from '../types'
 
-// Store shape
 type StoreState = {
   accounts: Account[]
   transactions: Transaction[]
-  addAccount: (a: Account) => void
   addTransaction: (t: Transaction) => void
+  deleteTransaction: (id: string) => void
+  deleteAllTransactions: () => void
+  resetToSampleMSTR: () => void
 }
 
-// Seed data
+/** Seed accounts — adjust to your aliases/ids if you have others */
 const seedAccounts: Account[] = [
   {
     id: 'acc-001',
@@ -34,37 +36,45 @@ const seedAccounts: Account[] = [
   },
 ]
 
-const seedTransactions: Transaction[] = [
-  {
-    id: 'tx-001',
-    accountId: 'acc-001',
-    date: '2025-08-01',
-    action: 'BUY',
-    symbol: 'XEQT.TO',
-    assetCategory: 'ETF',
-    currency: 'CAD',
-    quantity: 10,
-    price: 35.5,
-    notes: 'Initial buy',
-  },
-  {
-    id: 'tx-002',
-    accountId: 'acc-002',
-    date: '2025-08-05',
-    action: 'WITHDRAWAL',
-    symbol: 'BTC',
-    assetCategory: 'CRYPTO',
-    currency: 'USD',
-    quantity: -0.05, // example: moving crypto out
-    price: 0,
-    notes: 'Wallet withdrawal',
-  },
-]
+const seedTransactions: Transaction[] = []
 
-// Zustand store
-export const useAppStore = create<StoreState>((set) => ({
-  accounts: seedAccounts,
-  transactions: seedTransactions,
-  addAccount: (a) => set((s) => ({ accounts: [...s.accounts, a] })),
-  addTransaction: (t) => set((s) => ({ transactions: [...s.transactions, t] })),
-}))
+export const useAppStore = create<StoreState>()(
+  persist(
+    (set, get) => ({
+      accounts: seedAccounts,
+      transactions: seedTransactions,
+
+      addTransaction: (t) =>
+        set((s) => ({ transactions: [...s.transactions, t] })),
+
+      deleteTransaction: (id) =>
+        set((s) => ({
+          transactions: s.transactions.filter((x) => x.id !== id),
+        })),
+
+      deleteAllTransactions: () => set({ transactions: [] }),
+
+      resetToSampleMSTR: () =>
+        set((s) => ({
+          transactions: [
+            {
+              id: crypto.randomUUID(),
+              accountId: s.accounts[1]?.id ?? 'acc-002', // Beth-Margin by default
+              date: new Date().toISOString().slice(0, 10),
+              action: 'BUY',
+              symbol: 'MSTR',
+              assetCategory: 'STK',
+              currency: 'USD',
+              quantity: 10,
+              price: 100,
+            },
+          ],
+        })),
+    }),
+    {
+      name: 'mpt-store',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (s) => ({ accounts: s.accounts, transactions: s.transactions }),
+    }
+  )
+)

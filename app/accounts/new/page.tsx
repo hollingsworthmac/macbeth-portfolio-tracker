@@ -1,79 +1,78 @@
-// app/accounts/new/page.tsx (replace the form + handlers)
 'use client'
 
-import { useMemo, useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import Link from 'next/link'
-import { AccountsService } from '../../services/accounts'
-import type { AccountType, Currency } from '../../types'
+import type { AppAccount } from '../../services/accounts'
+import { addAccount } from '../../services/accounts'
 
-const ACCOUNT_TYPES: AccountType[] = ['TFSA','RRSP','RRIF/LIF','MARGIN','CRYPTO','RESP','FHSA']
-const CURRENCIES: Currency[] = ['CAD','USD']
+const ACCOUNT_TYPES: AppAccount['accountType'][] = [
+  'TFSA', 'RRSP', 'RRIF/LIF', 'MARGIN', 'CRYPTO', 'RESP', 'FHSA'
+]
+const CURRENCIES: AppAccount['baseCurrency'][] = ['CAD', 'USD']
 
 export default function NewAccountPage() {
-  const [alias, setAlias] = useState('')
-  const [holder, setHolder] = useState('')
-  const [broker, setBroker] = useState('')
-  const [accountNumber, setAccountNumber] = useState('')
-  const [baseCurrency, setBaseCurrency] = useState<Currency>('CAD')
-  const [accountType, setAccountType] = useState<AccountType>('TFSA')
+  const [alias, setAlias] = useState('New Account')
+  const [holder, setHolder] = useState('Owner')
+  const [broker, setBroker] = useState('Broker')
+  const [baseCurrency, setBaseCurrency] = useState<AppAccount['baseCurrency']>('CAD')
+  const [accountType, setAccountType] = useState<AppAccount['accountType']>('TFSA')
   const [registered, setRegistered] = useState(true)
-  const [msg, setMsg] = useState<string>('')
+  const [error, setError] = useState<string>('')
 
-  const errors = {
-    alias: alias.trim() ? '' : 'Alias is required',
-    holder: holder.trim() ? '' : 'Holder is required',
-  }
-  const hasErrors = useMemo(() => Object.values(errors).some(Boolean), [errors])
+  const canSave = useMemo(() => alias.trim().length > 0, [alias])
 
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (hasErrors) return
-    AccountsService.create({
-      alias, holder, broker, accountNumber, baseCurrency, accountType, registered
-    })
-    setMsg('✅ Account created')
-    setAlias(''); setHolder(''); setBroker(''); setAccountNumber('')
+  function onSave() {
+    setError('')
+    try {
+      addAccount({
+        alias: alias.trim(),
+        holder: holder.trim(),
+        broker: broker.trim(),
+        baseCurrency,
+        accountType,
+        registered,
+      })
+      // Go back to Accounts list
+      window.location.href = '/accounts'
+    } catch (e: any) {
+      setError(e?.message ?? 'Failed to create account')
+    }
   }
 
   return (
-    <div>
+    <main>
       <h2>New Account</h2>
-      <form onSubmit={onSubmit} style={{ display:'grid', gap: 8, maxWidth: 520 }}>
-        <div>
-          <input placeholder="Alias" value={alias} onChange={e=>setAlias(e.target.value)} />
-          {errors.alias && <div style={{ color:'crimson', fontSize:12 }}>{errors.alias}</div>}
-        </div>
-        <div>
-          <input placeholder="Holder" value={holder} onChange={e=>setHolder(e.target.value)} />
-          {errors.holder && <div style={{ color:'crimson', fontSize:12 }}>{errors.holder}</div>}
-        </div>
-        <input placeholder="Broker" value={broker} onChange={e=>setBroker(e.target.value)} />
-        <input placeholder="Account Number" value={accountNumber} onChange={e=>setAccountNumber(e.target.value)} />
 
-        <label>Base Currency
-          <select value={baseCurrency} onChange={e=>setBaseCurrency(e.target.value as Currency)}>
-            {CURRENCIES.map(c=> <option key={c} value={c}>{c}</option>)}
-          </select>
-        </label>
+      <div style={{display:'grid', gridTemplateColumns:'160px 1fr', gap:8, maxWidth:520}}>
+        <label>Alias</label>
+        <input value={alias} onChange={e=>setAlias(e.target.value)} />
 
-        <label>Account Type
-          <select value={accountType} onChange={e=>setAccountType(e.target.value as AccountType)}>
-            {ACCOUNT_TYPES.map(t=> <option key={t} value={t}>{t}</option>)}
-          </select>
-        </label>
+        <label>Holder</label>
+        <input value={holder} onChange={e=>setHolder(e.target.value)} />
 
-        <label>
-          <input type="checkbox" checked={registered} onChange={e=>setRegistered(e.target.checked)} />
-          {' '}Registered
-        </label>
+        <label>Broker</label>
+        <input value={broker} onChange={e=>setBroker(e.target.value)} />
 
-        <button type="submit" disabled={hasErrors} style={{ opacity: hasErrors ? 0.6 : 1 }}>
-          Create
-        </button>
-      </form>
+        <label>Base Currency</label>
+        <select value={baseCurrency} onChange={e=>setBaseCurrency(e.target.value as AppAccount['baseCurrency'])}>
+          {CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
 
-      {msg && <p>{msg}</p>}
-      <p style={{ marginTop: 12 }}><Link href="/accounts">← Back to Accounts</Link></p>
-    </div>
+        <label>Account Type</label>
+        <select value={accountType} onChange={e=>setAccountType(e.target.value as AppAccount['accountType'])}>
+          {ACCOUNT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+
+        <label>Registered</label>
+        <input type="checkbox" checked={registered} onChange={e=>setRegistered(e.target.checked)} />
+      </div>
+
+      {error && <p style={{color:'crimson', marginTop:8}}>{error}</p>}
+
+      <div style={{ marginTop: 12, display:'flex', gap:12 }}>
+        <button onClick={onSave} disabled={!canSave}>Save</button>
+        <Link href="/accounts">Cancel</Link>
+      </div>
+    </main>
   )
 }

@@ -1,49 +1,89 @@
 'use client'
 
-import { useMemo } from 'react'
-import { useAppStore } from '../store/appStore'
-import { computeHoldings } from '../selectors/holdings'
+import React from 'react'
+import { calculateACBv2, type HoldingRow } from '../acb/engine'
+import { getTransactions } from '../services/transactions'
+import { getLastPrices } from '../services/pricing'   
+type PriceMap = Record<string, { price: number; source: string }>
 
 export default function HoldingsPage() {
-  const txs = useAppStore(s => s.transactions)
-  const holdings = useMemo(() => computeHoldings(txs), [txs])
+  const [rows, setRows]   = React.useState<HoldingRow[]>([])
+  const [prices, setPrices] = React.useState<PriceMap>({})
+
+  React.useEffect(() => {
+    async function load() {
+      const txs = getTransactions()
+      const map = await calculateACBv2(txs)
+      const list = Array.from(map.values())
+      setRows(list)
+
+      if (list.length) {
+        // request prices for the unique set of symbols
+        const symbols = Array.from(new Set(list.map(r => r.symbol)))
+        try {
+          const p = await getLastPrices(symbols)
+          setPrices(p)
+        } catch (e) {
+          console.warn('[Holdings] pricing failed:', e)
+          setPrices({})
+        }
+      } else {
+        setPrices({})
+      }
+    }
+    load()
+  }, [])
 
   return (
     <main>
-      <h2>Holdings (Derived)</h2>
+      <h2>Holdings</h2>
+      <p style={{ fontSize: 12, opacity: 0.7 }}>
+        * Prototype ACB v2 + live pricing. FX conversion of market value to CAD will be added in DS3.2.
+      </p>
+
       <table>
         <thead>
           <tr>
             <th>Account</th>
             <th>Symbol</th>
             <th>Qty</th>
-            <th>Avg Cost</th>
-            <th>Total Cost</th>
-            <th>Market Value (stub)</th>
-            <th>Unrealized (stub)</th>
+            <th>ACB/Unit (CAD)</th>
+            <th>ACB Total (CAD)</th>
+            <th>Last Price</th>
+            <th>Source</th>
+            <th>Market Value</th>
+            <th>Unrealized</th>
           </tr>
         </thead>
         <tbody>
-          {holdings.map(h => {
-            const marketValue = 0 // DS3: plug live prices
-            const unreal = marketValue - h.totalCost
-            return (
-              <tr key={`${h.accountId}-${h.symbol}`}>
-                <td>{h.accountId}</td>
-                <td>{h.symbol}</td>
-                <td>{h.quantity}</td>
-                <td>{h.avgCost.toFixed(2)}</td>
-                <td>{h.totalCost.toFixed(2)}</td>
-                <td>{marketValue.toFixed(2)}</td>
-                <td>{unreal.toFixed(2)}</td>
-              </tr>
-            )
-          })}
+          {rows.length === 0 ? (
+            <tr><td colSpan={9}>No holdings yet.</td></tr>
+          ) : rows.map((r) => {
+              // ---- these lines MUST be inside the map so `r` is defined ----
+              const key   = r.symbol.toUpperCase()
+              const p     = prices[key]
+              const last  = p?.price ?? 0
+              const mv    = last * r.qty          // NOTE: not FX-adjusted yet
+              const unreal = mv - r.acbTotalCAD
+              // ----------------------------------------------------------------
+              return (
+                <tr key={`${r.accountId}::${r.symbol}`}>
+                  <td>{r.accountId}</td>
+                  <td>{r.symbol}</td>
+                  <td>{r.qty}</td>
+                  <td>{r.acbPerUnitCAD.toLocaleString(undefined, { style: 'currency', currency: 'CAD' })}</td>
+                  <td>{r.acbTotalCAD.toLocaleString(undefined, { style: 'currency', currency: 'CAD' })}</td>
+                  <td>{last}</td>
+                  <td>{p?.source ?? ''}</td>
+                  <td>{mv.toLocaleString(undefined, { style: 'currency', currency: 'CAD' })}</td>
+                  <td style={{ color: unreal >= 0 ? 'green' : 'crimson' }}>
+                    {unreal.toLocaleString(undefined, { style: 'currency', currency: 'CAD' })}
+                  </td>
+                </tr>
+              )
+            })}
         </tbody>
       </table>
-      <p style={{ marginTop: 12, fontSize: 12 }}>
-        * Simple cost math for prototype. DS3 will replace with full ACB rules, fees, FX, transfers, splits, options, etc.
-      </p>
     </main>
   )
 }
